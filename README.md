@@ -223,7 +223,7 @@ Diese hierarchische Struktur bestimmt, **wie Redundanz, Performance und Kapazit√
 
 Man kann sich das so vorstellen:
 
-```
+```mermaid
 flowchart TB
   Z[ZPOOL<br/>verwaltet gesamten Speicher<br/>Datasets und Snapshots]
 
