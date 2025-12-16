@@ -142,36 +142,36 @@ Copy-on-Write (COW) bedeutet, dass Daten nie direkt überschrieben werden. Statt
 
 Ein einfaches Beispiel:
 
-```
+
 Ist Zustand vor dem Schreiben:
-+------+      +---------+
-| Pointer | -->  | Block A |
-+------+      +---------+
-                     ↑
-                     alte Daten
+```mermaid
+flowchart LR
+  P[Pointer] --> A[Block A]
+  A --- AO((alte Daten))
+
 ```
 
 Ein Pointer ist in diesem Zusammenhang ein Verweis, also eine Art „Adresse“, die zeigt, wo sich ein bestimmter Datenblock auf dem Datenträger befindet. ZFS nutzt solche Pointer, um zu wissen, an welcher Stelle die gültige Version einer Datei liegt. 
 
 
-```
-Schreibvorgang:
-+------+      +---------+      +---------+
-| Pointer | -->  | Block A |      | Block B |
-+------+      +---------+      +---------+
-                     ↑               ↑
-                  alte Daten      neue Daten
+Schreibvorgan:
+```mermaid
+flowchart LR
+  P[Pointer] --> A[Block A]
+  A --- AO((alte Daten))
+
+  B[Block B]
+  B --- BN((neue Daten))
+
 ```
 
 Erst wenn alles sicher geschrieben ist, zeigt der Pointer auf Block B:
 
-```
 Nachher:
-+------+      +---------+
-| Pointer | -->  | Block B |
-+------+      +---------+
-                     ↑
-                  neue Daten
+```mermaid
+flowchart LR
+  P[Pointer] --> B[Block B]
+  B --- BN((neue Daten))
 ```
 
 So bleiben alte Daten erhalten, bis der Schreibvorgang vollständig abgeschlossen ist. Deduplizierung wird hier noch nicht erwähnt, weil sie nichts mit dem Schreibvorgang selbst zu tun hat. Copy-on-Write sorgt für Datensicherheit beim Schreiben, während Deduplizierung erst später greift, wenn gleiche Daten erkannt und zusammengeführt werden.
@@ -224,21 +224,21 @@ Diese hierarchische Struktur bestimmt, **wie Redundanz, Performance und Kapazit�
 Man kann sich das so vorstellen:
 
 ```
-+------------------------------------------------+
-|                    ZPOOL                          |
-| (Verwaltet gesamten Speicherplatz & Datasets)     |
-+------------------------------------------------+
-             |                 |
-             |                 |
-        +-+----+       +----+----+
-        | VDEV 1|      |  VDEV 2 |
-        +-+----+       +----+----+
-             |                 |
-   +------+-----+       +---------+---------+
-   |     |      |       |     |      |      |
-+-+ +----+ +----+ +----+ +----+ +----+ +----+
-|disk| |disk| |disk| |disk| |disk| |disk| |disk|
-+-+ +----+ +----+ +----+ +----+ +----+ +----+
+flowchart TB
+  Z[ZPOOL<br/>verwaltet gesamten Speicher<br/>Datasets und Snapshots]
+
+  Z --> V1[VDEV 1]
+  Z --> V2[VDEV 2]
+
+  V1 --> D1[disk]
+  V1 --> D2[disk]
+  V1 --> D3[disk]
+
+  V2 --> D4[disk]
+  V2 --> D5[disk]
+  V2 --> D6[disk]
+  V2 --> D7[disk]
+
 ```
 
 ### Erklärung:
@@ -260,20 +260,24 @@ Man kann sich das so vorstellen:
 
 Ein weiteres Beispiel mit unterschiedlichen Typen:
 
-```
-+------------------------------------------------+
-|                    ZPOOL                          |
-+------------------------------------------------+
-       |                       |                     |
-       |                       |                     |
-  +-+----+             +----+----+           +----+----+
-  |  VDEV 1 |          |  VDEV 2 |           |  VDEV 3 |
-  | Mirror  |          | RAID-Z1 |           | Stripe  |
-  +-+----+             +----+----+           +----+----+
-       |                       |                     |
-+---+------+        +------+------+------+      +------+
-|disk1|disk2|          |d1|d2|d3|d4|             |diskX |
-+---+------+        +------+------+------+      +------+
+```mermaid
+flowchart TB
+  Z[ZPOOL]
+
+  Z --> V1[VDEV 1<br/>Mirror]
+  Z --> V2[VDEV 2<br/>RAID Z1]
+  Z --> V3[VDEV 3<br/>Stripe]
+
+  V1 --> D1[disk1]
+  V1 --> D2[disk2]
+
+  V2 --> D3[d1]
+  V2 --> D4[d2]
+  V2 --> D5[d3]
+  V2 --> D6[d4]
+
+  V3 --> D7[diskX]
+
 ```
 
 ### Wichtig:
